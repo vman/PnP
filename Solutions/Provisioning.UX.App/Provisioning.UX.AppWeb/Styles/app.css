@@ -302,11 +302,21 @@ body {
 }
 
 .table table-striped {
-    font-size: 10px;
+    font-size: 11px;
+}
+
+.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
+    padding: 4px 4px;
+    line-height: 1.0;
+    vertical-align: top;
+}
+
+.table.table-bordered.table-striped {
+    font-size: 11px;
 }
 
 a {
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .leftnav {
@@ -343,6 +353,10 @@ a {
 div#chromeControl_bottomheader
 {
     height: 96px !important;
+}
+div#chromeControl_navigation
+{
+    height: 50px !important;
 }
 div#chromeControl_bottomheader_appicon
 {
@@ -388,4 +402,107 @@ span#chromeControl_topheader_sitetitle
   border-radius: 5px;
   margin-top: 15px;
   position: relative;
+}
+
+/* Begin People Picker Styles */
+
+.sp-peoplepicker-editDiv {
+    overflow: hidden;
+}
+
+span.sp-peoplepicker-chosen {
+    margin-right: 10px;
+}
+
+span.sp-peoplepicker-removeChosen {
+    margin-left: 3px;
+    cursor: pointer;
+}
+
+li.sp-peoplepicker-foundItem {
+    cursor: pointer;
+}
+
+li.sp-peoplepicker-foundItem:hover {
+    background-color:#f5f5f5;
+}
+
+ul.sp-peoplepicker-dropdown li {
+    padding: 4px;
+}
+
+/* maintain small divider line from bootstrap */
+ul.sp-peoplepicker-dropdown li.divider {
+    padding: 0px !important;
+}
+
+/* Site Edit CSS*/
+.ms-Button{background-color:#002050 !important;color:white !important }
+          .ms-Button:hover{background-color:#26416a !important;color:white !important}
+          .selected{background-color: rgba(243, 243, 243, 1);color: black !important;}
+          .link{text-decoration:none}
+          .navlink{
+              color:#0072c6;
+              height: 35px;
+              padding: 10px 0px 0px 16px;
+              margin-top:50px
+          }
+          .leftNav{display:block;height:100%;width:232px;background-color:#FFF;position:fixed;z-index:1}
+          .navBar{
+              height:50px;
+              width:100%;
+              background-color: #0072c6;
+              padding:0px;
+              display: block;
+              border-spacing: 0;
+              line-height: normal;
+              z-index:2;
+              position:fixed;
+              top:0;    
+          }hidd
+   html, body {
+  margin: 0;background-color:rgba(243, 243, 243, 1);
+}
+  .appTitle{
+    position: absolute;
+    top: 0px;
+    left: 153px;
+    color: white;
+    font-size: 24px;
+    font-family: Segoe UI;
+    padding: 7px 0px 0px 10px;
+  }
+
+
+.TileContainer
+{
+    margin-left: 50px;
+    margin-top: 50px;
+}
+
+.TileContent {
+	width: 371px;
+	height: 600px;
+	border: 1px;
+    background-color: #fff;
+	border-color: #fff;
+	border-style: solid;
+	overflow: hidden;
+    position:absolute;
+    top:97px;
+}
+.TextPostion {
+	margin: 10px 10px 10px 10px;
+}
+.NavLine
+{
+    display:inline-block;
+    vertical-align:middle;
+    height:40px;
+    width:1px;
+    background:#fff;
+    background-color:rgba(255,255,255,.4);
+    position:absolute;
+    top:5px;
+    left:141px
 }

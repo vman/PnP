@@ -1,4 +1,5 @@
-﻿using Provisioning.Common;
+﻿using Microsoft.SharePoint.Client;
+using Provisioning.Common;
 using Provisioning.Common.Authentication;
 using Provisioning.Common.Configuration;
 using Provisioning.Common.Configuration.Application;
@@ -11,6 +12,8 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -40,18 +43,39 @@ namespace Provisioning.Job
 
         public void ProcessSiteRequests()
         {
+            #region Process Approved Requests
+            // Begin processing of approved requests
             Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "Beginning Processing the site request repository");
             var _siteManager = _requestFactory.GetSiteRequestManager();
             var _requests = _siteManager.GetApprovedRequests();
-            Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "There is {0} site requests pending in the repository.", _requests.Count);
+            Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "There are {0} site requests pending in the repository.", _requests.Count);
             if(_requests.Count > 0)
             {
                 this.ProvisionSites(_requests);
             }
             else
             {
-               Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "There is no site requests pending in the repository");
+               Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "There are no site requests pending in the repository");
             }
+            // End processing of approved requests
+            #endregion
+
+            #region Process Failed or Incomplete Requests
+            // Begin processing of failed requests (retry all that are not in approved or complete status)
+            Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "Beginning processing of the site request repository for failed or incomplete requests");
+            _siteManager = _requestFactory.GetSiteRequestManager();
+            _requests = _siteManager.GetIncompleteRequests();
+            Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "There are {0} failed site requests pending in the repository.", _requests.Count);
+            if (_requests.Count > 0)
+            {
+                this.ProvisionSites(_requests);
+            }
+            else
+            {
+                Log.Info("Provisioning.Job.SiteProvisioningJob.ProcessSiteRequests", "There are no failed site requests pending in the repository");
+            }
+            // End processing of failed requests
+            #endregion
         }
 
         /// <summary>
@@ -67,8 +91,10 @@ namespace Provisioning.Job
             {
                 try 
                 {
-                    var _template = _tm.GetTemplateByName(siteRequest.Template);
-              
+                    // ****************************************************
+                    // Step 1 - Get Template                   
+                    // ****************************************************
+                    var _template = _tm.GetTemplateByName(siteRequest.Template);              
                     if (_template == null)
                     {   
                         //NO TEMPLATE FOUND THAT MATCHES WE CANNOT PROVISION A SITE
@@ -76,23 +102,58 @@ namespace Provisioning.Job
                         Log.Error("Provisioning.Job.SiteProvisioningJob.ProvisionSites", _message );
                         throw new ConfigurationErrorsException(_message);
                     }
-                   
+                    
+                    // ****************************************************
+                    // Step 2 - Update request status                    
+                    // ****************************************************
                     var _provisioningTemplate = _tm.GetProvisioningTemplate(_template.ProvisioningTemplate);
                     _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Processing);
+                   
+                    // ****************************************************
+                    // Step 3 - Create the site                    
+                    // ****************************************************
                     SiteProvisioningManager _siteProvisioningManager = new SiteProvisioningManager(siteRequest, _template);
                     Log.Info("Provisioning.Job.SiteProvisioningJob.ProvisionSites", "Provisioning Site Request for Site Url {0}.", siteRequest.Url);
                     _siteProvisioningManager.CreateSiteCollection(siteRequest, _template);
-                    _siteProvisioningManager.ApplyProvisioningTemplate(_provisioningTemplate, siteRequest);
+                                        
+                    // ****************************************************
+                    // Step 4 - Apply provisioning template                    
+                    // ****************************************************
+                    Log.Info("Provisioning.Job.SiteProvisioningJob.ProvisionSites", "Applying Provisioning Template for Site Url {0}.", siteRequest.Url);
+                    _siteProvisioningManager.ApplyProvisioningTemplate(_provisioningTemplate, siteRequest, _template);
+                    
+                    // ****************************************************
+                    // Step 5 - Update request access email                    
+                    // ****************************************************
+                    Log.Info("Provisioning.Job.SiteProvisioningJob.ProvisionSites", "Updating Request Access Email Address for Site Url {0}.", siteRequest.Url);
+                    _siteProvisioningManager.UpdateRequestAccessEmail(siteRequest);
+
+                    // ****************************************************
+                    // Step 6 - Update site description                   
+                    // ****************************************************
+                    Log.Info("Provisioning.Job.SiteProvisioningJob.ProvisionSites", "Updating site description for Site Url {0}.", siteRequest.Url);
+                    _siteProvisioningManager.UpdateSiteDescription(siteRequest);
+
+                    // ****************************************************
+                    // Step 7 - Send success email                    
+                    // ****************************************************
+                    Log.Info("Provisioning.Job.SiteProvisioningJob.ProvisionSites", "Sending Success Email for Site Url {0}.", siteRequest.Url);
                     this.SendSuccessEmail(siteRequest);
-                    _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Complete);
+                    
+                    // ****************************************************
+                    // Step 8 - Set status to complete                    
+                    // ****************************************************
+                    _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Complete, "");
+
                 }
                 catch(ProvisioningTemplateException _pte)
                 {
-                    _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Exception, _pte.Message);
+                    _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.CompleteWithErrors, _pte.Message);
                 }
                 catch(Exception _ex)
                 {
-                  _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Exception, _ex.Message);
+                    Log.Error("Provisioning.Job.SiteProvisioningJob.ProvisionSites", _ex.ToString());
+                    _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Exception, _ex.Message);
                   this.SendFailureEmail(siteRequest, _ex.Message);
                 }
             }

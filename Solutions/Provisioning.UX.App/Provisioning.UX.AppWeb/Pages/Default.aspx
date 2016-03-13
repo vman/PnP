@@ -4,7 +4,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" data-ng-app="app">
 <head>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8"/> 
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Dashboard</title>
@@ -25,7 +25,7 @@
     <div data-ng-include="'shell.html'"></div>
 
     <!-- Vendor JS -->
-    <script src="../scripts/vendor/jquery/jquery-2.1.3.min.js"></script>
+    <script src="../scripts/vendor/jquery/jquery-2.2.1.min.js"></script>
     <script type="text/javascript" src="//ajax.aspnetcdn.com/ajax/4.0/1/MicrosoftAjax.js"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.0-beta.6/angular.js"></script>
@@ -34,7 +34,9 @@
     <script src="../scripts/vendor/angular-ui/ui-bootstrap-tpls-0.12.1.min.js"></script>  
     <script src="../scripts/toastr.js"></script>
     <script src="../scripts/spin.js"></script>
-    
+    <script src="../scripts/angular-sanitize.min.js"></script>
+    <script src="../scripts/angular-translate.min.js"></script>
+    <script src="../scripts/angular-translate-loader-static-files.min.js"></script> 
         
 
     <!-- common Modules -->
@@ -45,9 +47,7 @@
 
     <!-- common.bootstrap Modules -->
     <script src="../scripts/bootstrap.dialog.js"></script>
-
-    <!-- People Picker from PnP -->
-    <script src="../scripts/peoplepickercontrol.js?rev=2" type="text/javascript"></script>   
+    
     <!-- Chrome Loader -->
     <script src="../scripts/chromeloader.js?rev=1" type="text/javascript"></script>
 
@@ -70,7 +70,8 @@
     <script src="../scripts/data/metadata.factory.js"></script>
     <script src="../scripts/data/appsettings.factory.js"></script>
     <script src="../scripts/wizard/services/provisioningServices.js"></script>
-    <script src="../scripts/app.js"></script>    
+    <script src="../scripts/app.js"></script>
+    <script type="text/javascript" src="../scripts/sp.peoplepicker.js"></script>    
 
     <script type="text/javascript">
         $(document).on('click', '.panel-heading span.clickable', function (e) {
