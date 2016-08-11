@@ -21,6 +21,11 @@ namespace Provisioning.Job
 {
     public class SiteProvisioningJob
     {
+        // Notes: 
+        // Recent: Cleanup activity - Removed unnecessary code
+        // Previous: updates were made in processing site requests that include handling timeouts in provisioning the site itself
+        // as well as updates to handle failed site provisioning attempts such as retries and picking up where it left off.
+
         #region Instance Members
         ISiteRequestFactory _requestFactory;
         IConfigurationFactory _configFactory;
@@ -107,6 +112,13 @@ namespace Provisioning.Job
                     // Step 2 - Update request status                    
                     // ****************************************************
                     var _provisioningTemplate = _tm.GetProvisioningTemplate(_template.ProvisioningTemplate);
+
+                    //NO TEMPLATE FOUND THAT MATCHES WE CANNOT PROVISION A SITE
+                    if (_template == null)
+                    {
+                        Log.Warning("Provisioning.Job.SiteProvisioningJob.ProvisionSites", "Template {0} was not found for Site Url {1}.", siteRequest.Template, siteRequest.Url);
+                    }
+
                     _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Processing);
                    
                     // ****************************************************
@@ -115,7 +127,10 @@ namespace Provisioning.Job
                     SiteProvisioningManager _siteProvisioningManager = new SiteProvisioningManager(siteRequest, _template);
                     Log.Info("Provisioning.Job.SiteProvisioningJob.ProvisionSites", "Provisioning Site Request for Site Url {0}.", siteRequest.Url);
                     _siteProvisioningManager.CreateSiteCollection(siteRequest, _template);
-                                        
+
+                    // FOR SUBSITE PROVISIONING TESTING ONLY
+                    //_siteProvisioningManager.CreateSubSite(siteRequest, _template);
+
                     // ****************************************************
                     // Step 4 - Apply provisioning template                    
                     // ****************************************************
@@ -154,10 +169,12 @@ namespace Provisioning.Job
                 {
                     Log.Error("Provisioning.Job.SiteProvisioningJob.ProvisionSites", _ex.ToString());
                     _requestManager.UpdateRequestStatus(siteRequest.Url, SiteRequestStatus.Exception, _ex.Message);
-                  this.SendFailureEmail(siteRequest, _ex.Message);
+                  this.SendFailureEmail(siteRequest, _ex.Message, true);
                 }
             }
         }
+
+        
 
         /// <summary>
         /// Sends a Notification that the Site was created
@@ -199,7 +216,7 @@ namespace Provisioning.Job
         /// </summary>
         /// <param name="info"></param>
         /// <param name="errorMessage"></param>
-        protected void SendFailureEmail(SiteInformation info, string errorMessage)
+        protected void SendFailureEmail(SiteInformation info, string errorMessage, bool sendToAdmin)
         {
             try
             {
@@ -209,8 +226,10 @@ namespace Provisioning.Job
                 _message.SiteOwner = info.SiteOwner.Name;
                 _message.Subject = "Alert: Your new SharePoint site request had a problem.";
                 _message.ErrorMessage = errorMessage;
-                _message.To.Add(info.SiteOwner.Name);
-
+                if (sendToAdmin)
+                {
+                    _message.To.Add(info.SiteOwner.Name);
+                }
                 if (!string.IsNullOrEmpty(this._settings.SupportEmailNotification))
                 {
                     string[] supportAdmins = this._settings.SupportEmailNotification.Split(';');
@@ -222,21 +241,24 @@ namespace Provisioning.Job
                 }
                 foreach (var admin in info.AdditionalAdministrators)
                 {
-                    _message.Cc.Add(admin.Name);
+                    if (sendToAdmin)
+                    {
+                        _message.Cc.Add(admin.Name);
+                    }
                     _admins.Append(admin.Name);
                     _admins.Append(" ");
                 }
                 _message.SiteAdmin = _admins.ToString();
                 EmailHelper.SendFailEmail(_message);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log.Error("Provisioning.Job.SiteProvisioningJob.SendSuccessEmail",
                     "There was an error sending email. The Error Message: {0}, Exception: {1}",
                      ex.Message,
                      ex);
             }
-          
+
         }
 
     }
